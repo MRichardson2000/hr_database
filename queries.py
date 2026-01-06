@@ -22,6 +22,21 @@ def find_highest_paid_employees() -> list[dict[str, Any]]:
         )
         select * from employee_salaries
         limit 10
+
+        or 
+
+        with highest_earners as (
+        select e.employee_id,
+            e.first_name,
+            e.last_name,
+            d.name as department,
+            s.amount as employee_salary,
+            rank() over (PARTITION by d.name order by s.amount desc) as earners_ranked
+        from employees e
+        left join departments d on e.department_id = d.department_id
+        left join salaries s on e.employee_id = s.employee_id	
+        )
+select * from highest_earners where earners_ranked <= 3
         """
     )
 
@@ -252,6 +267,67 @@ def salary_ranking() -> list[dict[str, Any]]:
             from salaries s
             left join employees e on e.employee_id = s.employee_id
             left join departments d on e.department_id = d.department_id
+        """
+    )
+
+def salary_comparison() -> list[dict[str, Any]]:
+    return fetch_result(
+        """
+        with employee_wages as (
+        select e.employee_id,
+               e.first_name,
+               e.last_name,
+               d.name as department, 
+               s.amount as employee_salary, 
+               avg(s.amount) over (partition by d.name) as department_average 
+        from employees e 
+        left join departments d on e.department_id = d.department_id 
+        left join salaries s on e.employee_id = s.employee_id	 
+        where s.amount is not null 
+        ) 
+        select * from employee_wages where employee_salary > department_average
+        """
+    )
+
+def training_stats() -> list[dict[str, Any]]:
+    return fetch_result(
+        """
+        with training_completers as (
+            select e.first_name,
+                e.last_name,
+                t.course_name,
+                t.completion_date
+            from training t
+            left join employees e on t.employee_id = e.employee_id
+            where t.completion_date >= date('now', '-1 year')
+        )
+        select * from training_completers
+        where completion_date < date('now', '-180 days')
+        order by completion_date DESC
+        """
+    )
+
+def training_coverage() -> list[dict[str, Any]]:
+    return fetch_result(
+        """
+        select p.name as project_name,
+            d.name as department_name,
+            count(distinct e.employee_id) as total_employees,
+            count(distinct t.employee_id) as training_completers,
+            count(distinct t.employee_id) * 100.0 / count(distinct e.employee_id) as training_coverage
+        from employees e
+        left join departments d on e.department_id = d.department_id
+        left join projects p on p.department_id = d.department_id
+        left join training t on e.employee_id = t.employee_id
+        group by project_name, department_name
+        having project_name is not null
+        """
+    )
+
+def attendance_report() -> list[dict[str, Any]]:
+    return fetch_result(
+        """
+
         """
     )
 
