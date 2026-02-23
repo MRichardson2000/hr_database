@@ -1,11 +1,20 @@
-from create_csv import create_csv
-from queries import find_performance_averages
+from __future__ import annotations
+from database.dbconn import fetch_result, sql_loader
+from utilities import CSV_FOLDER
+import pandas as pd
+from pathlib import Path
+from typing import Any
 
 
-def main():
-    data = find_performance_averages()
-    headers = list(data[0].keys() if data else [])
-    create_csv(data, "highest_paid_employees", headers)
+def employee_360_dataset() -> None:
+    sql = sql_loader("employee_360_dataset.sql")
+    rows = fetch_result(sql)
+    df = pd.DataFrame(rows)
+    df.to_excel(Path("csv_files") / "employee_360_dataset.xlsx")
+
+
+def main() -> None:
+    employee_360_dataset()
 
 
 if __name__ == "__main__":

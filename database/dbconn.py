@@ -24,3 +24,8 @@ def fetch_result(
     rows = [dict(row) for row in cur.fetchall()]
     conn.close()
     return rows
+
+
+def sql_loader(file_name: str) -> str:
+    sql_path = Path("queries") / file_name
+    return sql_path.read_text()
